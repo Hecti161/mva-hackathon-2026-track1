@@ -231,13 +231,14 @@ exists: `p.Asn1002Lys` is left as a VUS rather than over-called.
 
 **Limitations.**
 
-1. **The gene panel encodes human prior knowledge.** The strongest criticism of this
-   submission is that step 1 selected ~20 genes *because the analyst already knew that
-   rhabdomyosarcoma plus IUGR plus parental miscarriage implies MVA implies `BUB1B`*. The
-   pipeline confirmed and characterised that hypothesis rigorously; it did not generate it
-   from first principles. For a method intended to be reused on *other* undiagnosed
-   individuals, this is the component that must be replaced by automated, HPO-driven,
-   genome-wide gene prioritisation. It is the priority for a subsequent model.
+1. **The gene panel encodes human prior knowledge — addressed in model 2.** The strongest
+   criticism of this submission is that step 1 selected ~20 genes *because the analyst
+   already knew that rhabdomyosarcoma plus IUGR plus parental miscarriage implies MVA
+   implies `BUB1B`*. The pipeline confirmed and characterised that hypothesis rigorously;
+   it did not generate it from first principles. Model 2 of this submission
+   (`Hecti161_track1_report_model2.md`) removes that prior entirely: given only the eight
+   HPO terms, phenotype similarity ranks `BUB1B` 15th of 5,268 annotated disease genes and
+   the genomic evidence isolates the same compound heterozygote at rank 1.
 2. **Secondary findings are not exhaustive.** Only 20 genes were screened. A complete
    incidental-findings analysis would require the full ACMG SF v3.2 panel (~80 genes).
    This does not affect the primary finding.

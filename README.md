@@ -73,16 +73,73 @@ confirmation.
 
 ---
 
+## Model 2 — the blind pipeline
+
+The targeted pipeline above answers one case. It does not generalise, because a human
+chose its gene panel after recognising the syndrome. Model 2 removes that human and asks
+whether the answer survives.
+
+**The only input is the proband's eight HPO terms.** No disease name, no gene panel, no
+candidate list. The strings "MVA" and "BUB1B" appear nowhere in `pipeline_blind/` or its
+inputs.
+
+**It recovers the same compound heterozygote at rank 1.**
+
+| Stage | In | Out |
+|---|---|---|
+| Phenotype similarity over the HPO corpus | 8 HPO terms | 5,268 genes ranked — `BUB1B` **15th** |
+| Top *K*=200 genes → GRCh38 coordinates | 200 | 199 resolved |
+| Streaming extraction from the VCF | 5,012,204 variants | 32,309 |
+| Exonic / splice-region restriction | 32,309 | 884 |
+| Read-level quality gate | 884 | 43 rejected |
+| Rarity + impact + inheritance modelling | — | **3 findings, `BUB1B` compound het at #1** |
+
+*K* was fixed at 200 before any variant was examined. Gene ranking uses Resnik similarity
+with best-match average, weighting each matched HPO term by its information content.
+`CEP57` (MVA2) ranks 14th and `TRIP13` (MVA3) 62nd — phenotype identifies the *disease*
+and cannot separate genes within it; the genomic evidence makes that call.
+
+### Physical phasing from PGT/PID
+
+A naive run ranked a `RAI1` compound heterozygote above `BUB1B`: two novel frameshifts
+3 bp apart, both PASS, GQ 99, DP > 45. A textbook false positive — and the VCF contained
+its own disproof. Both calls carry `PID 17793784_AGC_A` with identical `PGT 0|1`.
+
+GATK emits `PID` (phase-set id) and `PGT` (phased genotype) whenever two variants are
+close enough to be seen on the same reads. Identical `PID` **and** identical `PGT` places
+them on one haplotype — a single complex indel emitted as two records, not two alleles in
+trans.
+
+| Relationship | Evidence | Action |
+|---|---|---|
+| **cis** | shared `PID`, same `PGT` | reject — one allele, not a pair |
+| **trans** | shared `PID`, opposite `PGT` | accept and upweight — proven at read level |
+| **unknown** | no shared `PID` | accept without penalty — unphaseable |
+
+Read-level evidence from the caller, not an inference from coordinates, and it works both
+ways: it kills false pairs and confirms real ones. Generic to any short-read callset.
+
+Three standard remedies were tested against these artefacts and **none would have helped**,
+which is worth recording: Broad hard filters were already applied by the data provider (the
+VCF header carries the `VariantFiltration` invocation) and both artefacts pass them
+comfortably — `RAI1` scores QD 12.14/12.68, FS 4.28/2.65, SOR 1.40/1.18, MQ 60; allele-
+fraction filtering of homozygous calls misses the low-depth `PEX5` artefact, whose VAF is
+1.00 at DP 10; and `bcftools norm` left-aligns and splits or joins multiallelics at one
+position but does not merge adjacent variants into an MNP.
+
+Full write-up: [`results/Hecti161_track1_report_model2.md`](results/Hecti161_track1_report_model2.md).
+
+---
+
 ## Honest limitations
 
 Stated plainly, because the panel cannot assess what it cannot see.
 
-1. **The gene panel encodes human prior knowledge.** Step 1 selects ~20 genes *because the
-   analyst already knew* that rhabdomyosarcoma + IUGR + parental miscarriage implies MVA
-   implies `BUB1B`. This pipeline confirmed and characterised that hypothesis rigorously;
-   it did not generate it from first principles. For a method meant to be reused on *other*
-   undiagnosed individuals, this is the component that must be replaced by automated,
-   HPO-driven, genome-wide gene prioritisation. It is the priority for the next model.
+1. ~~**The gene panel encodes human prior knowledge.**~~ **Resolved by model 2.** The
+   targeted pipeline selects ~20 genes *because the analyst already knew* that
+   rhabdomyosarcoma + IUGR + parental miscarriage implies MVA implies `BUB1B`. The blind
+   pipeline in [`pipeline_blind/`](pipeline_blind/) removes that knowledge entirely and
+   recovers the same compound heterozygote at rank 1 — see below.
 2. **Phase is inferred, not proven.** The two alleles are 10.9 kb apart — beyond short-read
    phasing — and no parental data are provided. Parental Sanger sequencing of the two
    positions is the single most informative next experiment: it would activate ACMG PM3,
@@ -138,6 +195,16 @@ python pipeline/06_mosaic_windows.py
 python pipeline/07_mosaic_variance_test.py
 ```
 
+Model 2, the blind pipeline — takes no gene list, only the HPO terms hard-coded in step 02:
+
+```bash
+python pipeline_blind/01_fetch_hpo.py                         # ~1 min
+python pipeline_blind/02_rank_genes_by_phenotype.py           # ~3 min
+python pipeline_blind/03_extract_topgenes.py $VCF             # ~3 min
+python pipeline_blind/04_filter_exonic.py                     # ~2 min
+python pipeline_blind/05_rank_candidates.py                   # ~2 min
+```
+
 Step 4 on `vep_BUB1B.json` prints the two causal variants at the top of the
 HIGH/MODERATE table. Contig naming is normalised internally, so a VCF using either `1` or
 `chr1` works unchanged — note that the challenge VCF uses `1` while the submission format
@@ -162,9 +229,17 @@ pipeline/
   05_mosaic_collect.py         genome-wide allele balance harvest
   06_mosaic_windows.py         per-chromosome and 10 Mb windowed dispersion
   07_mosaic_variance_test.py   variance test vs binomial, detection limit
+pipeline_blind/                model 2 - no gene panel, HPO terms only
+  01_fetch_hpo.py              Human Phenotype Ontology + gene annotations
+  02_rank_genes_by_phenotype.py  Resnik/best-match-average over 5,268 disease genes
+  03_extract_topgenes.py       top-200 loci from Ensembl, one pass over the VCF
+  04_filter_exonic.py          canonical-transcript exons, +/-10 bp splice pad
+  05_rank_candidates.py        VEP, quality gate, PGT/PID phasing, inheritance models
 results/
-  Hecti161_bub1b-compound-het.csv   Track 1 submission
-  Hecti161_track1_report.md         methods description and report
+  Hecti161_bub1b-compound-het.csv     model 1 submission (targeted panel)
+  Hecti161_track1_report.md           model 1 report
+  Hecti161_blind-hpo-pipeline.csv     model 2 submission (blind, HPO-driven)
+  Hecti161_track1_report_model2.md    model 2 report
 ```
 
 ---
