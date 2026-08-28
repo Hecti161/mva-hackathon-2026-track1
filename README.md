@@ -1,7 +1,7 @@
 # MVA Hackathon 2026 — Track 1 (Variant Prediction)
 
 **Team:** Hecti161
-**Proband:** `WGS_EX2312012`
+**Proband:** `PROBAND01` (challenge identifier; the sequencing sample ID inside the VCF is `WGS_EX2312012`)
 **Assembly:** GRCh38
 
 A phenotype-first pipeline that identifies the causal variants in an undiagnosed child with

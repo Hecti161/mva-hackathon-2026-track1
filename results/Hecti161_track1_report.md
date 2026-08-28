@@ -3,10 +3,10 @@
 
 **Team name:** Hecti161
 **Model number:** 1 of up to 6
-**Proband:** `WGS_EX2312012`
+**Proband:** `PROBAND01` (challenge identifier; the sequencing sample ID inside the VCF is `WGS_EX2312012`)
 **Submission file:** `Hecti161_bub1b-compound-het.csv`
 **Assembly:** GRCh38
-**Code:** see accompanying GitHub repository (`analysis/` — four scripts, end-to-end reproducible)
+**Code:** https://github.com/Hecti161/mva-hackathon-2026-track1 (`pipeline/` — seven scripts, end-to-end reproducible)
 
 ---
 
@@ -86,12 +86,12 @@ MVA / mitotic spindle assembly checkpoint genes (`BUB1B`, `CEP57`, `TRIP13`, `BU
 UTR and near-regulatory space.
 
 **Step 2 — Extraction.** A single streaming pass over the 5,012,204-variant VCF
-(`analysis/extract.py`) emitted the 3,259 records intersecting those intervals. `bcftools`
+(`pipeline/02_extract_regions.py`) emitted the 3,259 records intersecting those intervals. `bcftools`
 and `tabix` are unavailable on the target platform (Windows), so the reader is pure Python
 over `gzip` — slower than a tabix seek but portable and free of a toolchain install.
 
 **Step 3 — Annotation.** Extracted variants were annotated via the **Ensembl VEP REST API**
-in batches (`analysis/vep.py`), requesting consequence terms, MANE Select transcript
+in batches (`pipeline/03_annotate_vep.py`), requesting consequence terms, MANE Select transcript
 mapping, HGVS c./p. nomenclature, exon numbering, protein domains, gnomAD exome and genome
 allele frequencies, and SIFT / PolyPhen-2 / AlphaMissense predictions.
 
