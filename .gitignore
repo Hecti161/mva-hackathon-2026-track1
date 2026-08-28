@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------------------
+# CONTROLLED-ACCESS DATA — NEVER COMMIT
+#
+# The challenge dataset contains the genome of a living child under a controlled
+# access agreement. Raw data, derived genotypes and the clinical phenotype
+# document must not be redistributed. Everything below is denied by default.
+# ---------------------------------------------------------------------------
+
+# raw inputs
+data/
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+*.bam
+*.bai
+*.cram
+*.crai
+
+# clinical documents
+*.docx
+*.doc
+*.pdf
+
+# derived patient data (allele balances, genotypes, annotations of proband variants)
+work/
+*.pkl
+candidates.vcf
+vep_*.json
+chromcount.json
+ab.pkl
+rows.pkl
+
+# Hugging Face download cache
+.cache/
+.huggingface/
+
+# credentials
+.env
+*token*
+*.key
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# os
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Explicit allow-list: the challenge's sanctioned public outputs.
+# Submission and report are released under CC BY 4.0 per the challenge terms.
+# These re-include files that the broad rules above would otherwise catch.
+# ---------------------------------------------------------------------------
+!results/*.csv
+!results/*.md
+!results/*.pdf

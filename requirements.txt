@@ -1,0 +1,8 @@
+# No third-party dependencies.
+#
+# This pipeline uses only the Python 3.8+ standard library:
+#   gzip, json, pickle, collections, statistics, math, urllib.request, os, sys, time
+#
+# Network access to https://rest.ensembl.org is required (gene coordinates, VEP).
+# No bioinformatics toolchain (bcftools/tabix/samtools) is needed, which is what
+# lets the pipeline run unmodified on Windows.
